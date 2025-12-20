@@ -1,6 +1,5 @@
 package boards
 
-
 import (
 	"hrm-app/internal/pkg/database"
 )

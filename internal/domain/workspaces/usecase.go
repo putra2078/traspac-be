@@ -6,8 +6,6 @@ import (
 	"hrm-app/internal/pkg/utils"
 )
 
-
-
 type UseCase interface {
 	Create(workspace *Workspace) error
 	GetAll() ([]Workspace, error)

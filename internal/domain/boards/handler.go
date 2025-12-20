@@ -2,8 +2,8 @@ package boards
 
 import (
 	"hrm-app/internal/response"
-	"strconv"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )

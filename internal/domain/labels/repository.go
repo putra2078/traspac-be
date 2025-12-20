@@ -1,6 +1,5 @@
 package labels
 
-
 import (
 	"hrm-app/internal/pkg/database"
 )

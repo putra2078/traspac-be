@@ -17,7 +17,7 @@ func NewHandler(u UseCase) *Handler {
 	return &Handler{usecase: u}
 }
 
-func(h *Handler) Create(c *gin.Context) {
+func (h *Handler) Create(c *gin.Context) {
 	var server Server
 	if err := c.ShouldBindJSON(&server); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
@@ -39,7 +39,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Success(c,servers)
+	response.Success(c, servers)
 }
 
 func (h *Handler) GetByID(c *gin.Context) {

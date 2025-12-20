@@ -1,8 +1,8 @@
 package taskCardComment
 
 import (
-	"net/http"
 	"hrm-app/internal/response"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -114,4 +114,3 @@ func (h *Handler) DeleteTaskCardComment(c *gin.Context) {
 
 	response.Success(c, nil)
 }
-

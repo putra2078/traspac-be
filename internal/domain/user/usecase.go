@@ -50,7 +50,6 @@ func (u *usecase) Register(req *RegisterRequest) error {
 		Username: req.Username,
 		Email:    req.Email,
 		Password: hashed,
-
 	}
 
 	if err := u.repo.Create(newUser); err != nil {

@@ -40,7 +40,6 @@ import (
 	"hrm-app/config"
 	"hrm-app/internal/app"
 
-
 	// "hrm-app/internal/domain/contact"
 	// "hrm-app/internal/domain/department"
 	// "hrm-app/internal/domain/employee"
