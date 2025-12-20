@@ -1,0 +1,139 @@
+name: CI/CD Pipeline
+
+permissions:
+  contents: write
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123456
+          POSTGRES_DB: hrm_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Install golang-migrate
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/bin/migrate
+          which migrate
+
+      - name: Run Database Migrations
+        run: |
+          migrate -database "postgresql://postgres:123456@localhost:5432/hrm_db?sslmode=disable" -path migrations up
+
+      - name: Install dependencies
+        run: go mod download
+
+      # 🧹 Auto-format step: memperbaiki format code otomatis dan push ke branch PR
+      - name: Auto-format Go code and push (if changes)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Running gofmt..."
+          gofmt -s -w .
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "✅ No formatting changes."
+            exit 0
+          fi
+
+          echo "🪄 Formatting changed files, committing..."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: auto-format code (gofmt) [skip ci]"
+
+          # Ensure we have full history and can rebase onto remote branch
+          git fetch origin +refs/heads/*:refs/remotes/origin/*
+
+          # determine target branch to push to:
+          BRANCH="${{ github.head_ref }}"
+          # fallback to ref_name (for push events)
+          if [ -z "$BRANCH" ]; then
+            BRANCH="${{ github.ref_name }}"
+          fi
+
+          if [ -z "$BRANCH" ]; then
+            echo "Could not determine branch name to push to. Exiting."
+            exit 1
+          fi
+
+          # Checkout the branch so we are not in detached HEAD
+          git checkout -B "$BRANCH"
+
+          # Rebase local changes onto latest remote branch to get a fast-forward push
+          if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
+            echo "Rebasing onto origin/${BRANCH}..."
+            if ! git rebase "origin/${BRANCH}"; then
+              echo "Rebase failed — aborting rebase and exiting (remote has diverged)."
+              git rebase --abort || true
+              exit 1
+            fi
+          else
+            echo "No origin/${BRANCH} found, will push new branch."
+          fi
+
+          # Push (fast-forward). Use token auth via remote url
+          echo "Pushing changes to branch ${BRANCH}..."
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:${BRANCH}
+
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Run Tests
+        run: go test -v ./...
+
+      - name: Check code formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "These files are not formatted properly:"
+            gofmt -l .
+            exit 1
+          else
+            echo "✅ Code formatting check passed!"
+          fi
+
+  security-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
+
+  # Uncomment and modify deployment job based on your needs
+  # deploy:
+  #   needs: [build-and-test, security-scan]
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - name: Deploy to production
+  #       run: echo "Add your deployment steps here"

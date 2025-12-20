@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test - Update TaskTabID</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status.connected {
+            background: #10b981;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .log-container {
+            margin-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            padding-top: 20px;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .log-header h3 {
+            color: #374151;
+        }
+
+        .log-box {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+        }
+
+        .log-entry.success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+
+        .log-entry.error {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+
+        .log-entry.info {
+            background: #dbeafe;
+            border-left-color: #3b82f6;
+        }
+
+        .timestamp {
+            color: #6b7280;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 WebSocket Test Client</h1>
+            <p>Update TaskTabID Real-time</p>
+            <div class="status disconnected" id="status">Disconnected</div>
+        </div>
+
+        <div class="content">
+            <div class="button-group">
+                <button class="btn-success" onclick="connect()">Connect</button>
+                <button class="btn-danger" onclick="disconnect()">Disconnect</button>
+            </div>
+
+            <form onsubmit="sendUpdate(event)">
+                <div class="form-group">
+                    <label for="taskCardId">Task Card ID</label>
+                    <input type="number" id="taskCardId" placeholder="Enter task card ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskTabId">New Task Tab ID</label>
+                    <input type="number" id="taskTabId" placeholder="Enter new task tab ID" required>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    📤 Send Update
+                </button>
+            </form>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Messages Sent</div>
+                    <div class="stat-value" id="messagesSent">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Messages Received</div>
+                    <div class="stat-value" id="messagesReceived">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Successful Updates</div>
+                    <div class="stat-value" id="successCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Errors</div>
+                    <div class="stat-value" id="errorCount">0</div>
+                </div>
+            </div>
+
+            <div class="log-container">
+                <div class="log-header">
+                    <h3>📋 Activity Log</h3>
+                    <button class="btn-secondary" onclick="clearLog()" style="padding: 8px 16px; font-size: 14px;">
+                        Clear Log
+                    </button>
+                </div>
+                <div class="log-box" id="logBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messagesSent = 0;
+        let messagesReceived = 0;
+        let successCount = 0;
+        let errorCount = 0;
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                addLog('Already connected', 'info');
+                return;
+            }
+
+            ws = new WebSocket('ws://localhost:8080/api/v1/ws/task-cards');
+
+            ws.onopen = function(event) {
+                updateStatus(true);
+                addLog('✅ WebSocket connected successfully', 'success');
+            };
+
+            ws.onmessage = function(event) {
+                messagesReceived++;
+                updateStats();
+
+                const data = JSON.parse(event.data);
+                console.log('Received:', data);
+
+                if (data.status === 'success') {
+                    successCount++;
+                    addLog(`✅ Success: Task Card ${data.task_card_id} moved to Tab ${data.task_tab_id}`, 'success');
+                } else if (data.status === 'error') {
+                    errorCount++;
+                    addLog(`❌ Error: ${data.error}`, 'error');
+                }
+
+                updateStats();
+            };
+
+            ws.onerror = function(error) {
+                errorCount++;
+                updateStats();
+                addLog('❌ WebSocket error occurred', 'error');
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = function(event) {
+                updateStatus(false);
+                addLog('🔌 WebSocket disconnected', 'info');
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                updateStatus(false);
+                addLog('🔌 Disconnected by user', 'info');
+            }
+        }
+
+        function sendUpdate(event) {
+            event.preventDefault();
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addLog('❌ Not connected. Please connect first.', 'error');
+                return;
+            }
+
+            const taskCardId = parseInt(document.getElementById('taskCardId').value);
+            const taskTabId = parseInt(document.getElementById('taskTabId').value);
+
+            const message = {
+                action: 'update_task_tab_id',
+                task_card_id: taskCardId,
+                task_tab_id: taskTabId
+            };
+
+            ws.send(JSON.stringify(message));
+            messagesSent++;
+            updateStats();
+
+            addLog(`📤 Sent: Update Task Card ${taskCardId} to Tab ${taskTabId}`, 'info');
+        }
+
+        function updateStatus(connected) {
+            const statusEl = document.getElementById('status');
+            if (connected) {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+            } else {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logBox = document.getElementById('logBox');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            
+            logBox.appendChild(logEntry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logBox').innerHTML = '';
+            addLog('Log cleared', 'info');
+        }
+
+        function updateStats() {
+            document.getElementById('messagesSent').textContent = messagesSent;
+            document.getElementById('messagesReceived').textContent = messagesReceived;
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+
+        // Auto-connect on page load
+        window.addEventListener('load', function() {
+            addLog('🚀 WebSocket Test Client loaded', 'info');
+            addLog('Click "Connect" to establish WebSocket connection', 'info');
+        });
+    </script>
+</body>
+</html>

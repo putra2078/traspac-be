@@ -1,0 +1,13 @@
+# ======================================
+# 🚀 AIR CONFIG for HRM APP (by Putra)
+# ======================================
+root = "."
+tmp_dir = "tmp"
+include_ext = ["go"]
+exclude_dir = ["tmp", "vendor"]
+delay = 1000
+clear = true
+
+[build]
+cmd = "go build -o tmp/main ./cmd/server"
+bin = "tmp/main"
