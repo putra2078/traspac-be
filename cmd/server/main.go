@@ -1,30 +1,3 @@
-// package main
-
-// import (
-// 	"fmt"
-// 	"hrm-app/config"
-// 	"hrm-app/internal/app"
-// 	"hrm-app/internal/domain/contact"
-// 	"hrm-app/internal/domain/employee"
-// 	"hrm-app/internal/domain/manager"
-// 	"hrm-app/internal/domain/user"
-// 	"hrm-app/internal/pkg/database"
-// )
-
-// func main() {
-// 	cfg := config.LoadConfig()
-
-// 	database.ConnectDatabase(cfg)
-// 	database.ConnectRedis(cfg)
-
-// 	r := app.SetupRouter(cfg)
-// 	port := fmt.Sprintf(":%d", cfg.Server.Port)
-// 	// Auto migrate database schemas
-// 	// ensure contact table exists as we now create contacts in a transaction
-// 	database.DB.AutoMigrate(&employee.Employee{}, &contact.Contact{}, &user.User{}, &manager.Manager{})
-// 	r.Run(port)
-// }
-
 package main
 
 import (
@@ -39,80 +12,129 @@ import (
 
 	"hrm-app/config"
 	"hrm-app/internal/app"
-
-
-	// "hrm-app/internal/domain/contact"
-	// "hrm-app/internal/domain/department"
-	// "hrm-app/internal/domain/employee"
-	// "hrm-app/internal/domain/manager"
-	// "hrm-app/internal/domain/user"
-	// "hrm-app/internal/middleware"
+	"hrm-app/internal/middleware"
 	"hrm-app/internal/pkg/database"
+	rmqConfig "hrm-app/internal/pkg/rabbitmq/config"
+	rmqConnection "hrm-app/internal/pkg/rabbitmq/connection"
+	rmqManager "hrm-app/internal/pkg/rabbitmq/manager"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+// func main() {
+// 	// Load configuration
+// 	cfg := config.LoadConfig()
+
+// 	// Set Gin mode
+// 	mode := os.Getenv("GIN_MODE")
+// 	if mode == "" {
+// 		mode = "debug"
+// 	}
+// 	gin.SetMode(mode)
+
+// 	// --- Connect to PostgreSQL ---
+// 	database.ConnectDatabase(cfg)
+// 	log.Println("[INFO] PostgreSQL connected successfully")
+
+// 	// --- Connect to Redis ---
+// 	database.ConnectRedis(cfg)
+// 	log.Println("[INFO] Redis connected successfully")
+
+// 	// --- Setup Gin Router ---
+// 	r, hub := app.SetupRouter(cfg)
+// 	r.Use(gin.Recovery())
+
+// 	// --- Server Configuration ---
+// 	port := fmt.Sprintf(":%d", cfg.Server.Port)
+// 	srv := &http.Server{
+// 		Addr:              port,
+// 		Handler:           r,
+// 		ReadHeaderTimeout: 5 * time.Second,
+// 		ReadTimeout:       15 * time.Second,
+// 		WriteTimeout:      15 * time.Second,
+// 		IdleTimeout:       60 * time.Second,
+// 	}
+
+// 	// Jalankan server di goroutine
+// 	go func() {
+// 		log.Printf("[INFO] Server is running on %s\n", port)
+// 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+// 			log.Fatalf("[ERROR] Server failed: %v", err)
+// 		}
+// 	}()
+
+// 	// --- Graceful Shutdown ---
+// 	quit := make(chan os.Signal, 1)
+// 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+// 	<-quit
+// 	log.Println("[INFO] Shutting down server...")
+
+// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// 	defer cancel()
+
+// 	if err := srv.Shutdown(ctx); err != nil {
+// 		log.Fatalf("[ERROR] Server forced to shutdown: %v", err)
+// 	}
+
+// 	// Shutdown Hub and Workers
+// 	if hub != nil {
+// 		hub.Shutdown()
+// 	}
+
+// 	log.Println("[INFO] Server exited gracefully")
+// }
 
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
 
-	// Set Gin mode (default: release untuk production)
+	// Set Gin mode
 	mode := os.Getenv("GIN_MODE")
 	if mode == "" {
-		mode = "debug" // default ke production-safe mode
+		mode = "debug"
 	}
 	gin.SetMode(mode)
 
-	// --- Initialize Prometheus Metrics ---
-	// middleware.InitPrometheus()
-	// log.Println("[INFO] Prometheus metrics initialized")
-
 	// --- Connect to PostgreSQL ---
-	database.ConnectDatabase(cfg) // function ini sudah handle error & logging internal
+	database.ConnectDatabase(cfg)
 	log.Println("[INFO] PostgreSQL connected successfully")
 
 	// --- Connect to Redis ---
-	// Optional: hanya jalankan jika kamu punya file redis.go
 	database.ConnectRedis(cfg)
 	log.Println("[INFO] Redis connected successfully")
 
-	// --- Auto Migration (hanya di mode debug) ---
-	// if gin.Mode() == gin.DebugMode {
-	// 	log.Println("[INFO] Running auto migration (debug mode only)...")
-	// 	err := database.DB.AutoMigrate(
-	// 		&employee.Employee{},
-	// 		&contact.Contact{},
-	// 		&user.User{},
-	// 		&manager.Manager{},
-	// 		&department.Department{},
-	// 	)
-	// 	if err != nil {
-	// 		log.Fatalf("[ERROR] Migration failed: %v", err)
-	// 	}
-	// 	log.Println("[INFO] Auto migration completed successfully")
-	// }
+	// --- Connect to RabbitMQ ---
+	rmqConn, err := rmqConnection.New(rmqConfig.RabbitURL)
+	if err != nil {
+		log.Fatalf("[ERROR] Failed to connect to RabbitMQ: %v", err)
+	}
+	defer rmqConn.Close()
+	log.Println("[INFO] RabbitMQ connected successfully")
+
+	// --- Initialize RabbitMQ Manager ---
+	channelManager := rmqManager.NewChannelManager(rmqConn)
+	rateLimiter := middleware.NewRateLimiter()
+	log.Println("[INFO] RabbitMQ Channel Manager initialized")
 
 	// --- Setup Gin Router ---
-	r := app.SetupRouter(cfg)
-	r.Use(gin.Recovery()) // recover dari panic
-	// --- Setup Prometheus Metrics Endpoint ---
-	// r.GET("/metrics", gin.WrapF(promhttp.Handler().ServeHTTP))
+	r, hub := app.SetupRouter(cfg, channelManager, rateLimiter)
+	r.Use(gin.Recovery())
 
 	// --- Server Configuration ---
 	port := fmt.Sprintf(":%d", cfg.Server.Port)
 	srv := &http.Server{
 		Addr:              port,
 		Handler:           r,
-		ReadHeaderTimeout: 5 * time.Second,  // ⏳ Timeout untuk membaca header
-		ReadTimeout:       15 * time.Second, // batas waktu baca body
-		WriteTimeout:      15 * time.Second, // batas waktu tulis respons
-		IdleTimeout:       60 * time.Second, // waktu idle maksimum
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
-	// Jalankan server di goroutine agar bisa shutdown dengan elegan
+	// Jalankan server di goroutine
 	go func() {
 		log.Printf("[INFO] Server is running on %s\n", port)
+		log.Printf("[INFO] RabbitMQ Management UI: http://localhost:15672")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("[ERROR] Server failed: %v", err)
 		}
@@ -122,14 +144,25 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
 	log.Println("[INFO] Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Shutdown HTTP server
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("[ERROR] Server forced to shutdown: %v", err)
+		log.Printf("[ERROR] Server forced to shutdown: %v", err)
 	}
+
+	// Shutdown Hub and Workers
+	if hub != nil {
+		hub.Shutdown()
+	}
+
+	// Close all RabbitMQ channels
+	log.Println("[INFO] Closing RabbitMQ channels...")
+	// channelManager will auto-cleanup when connection closes
 
 	log.Println("[INFO] Server exited gracefully")
 }

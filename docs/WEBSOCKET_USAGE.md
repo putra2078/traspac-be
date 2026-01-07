@@ -18,6 +18,8 @@ All messages sent to the server must follow this JSON structure:
 }
 ```
 
+## TaskCard Operations
+
 ### 1. Update Task Card Tab
 Move a card to a different tab.
 
@@ -32,7 +34,7 @@ Move a card to a different tab.
 ```
 
 ### 2. Update Task Card Details
-Update content, name, comment, date, or status of a card.
+Update content, name, date, or status of a card.
 
 **Action**: `update_task_card`
 
@@ -42,12 +44,13 @@ Update content, name, comment, date, or status of a card.
   "task_card_id": 1,
   "name": "New Card Title",
   "content": "Updated content here",
-  // "comment": "New comment",
   "date": "2023-12-31",
   "status": true
 }
 ```
 *Note: Omit fields that should not be updated.*
+
+## TaskTab Operations
 
 ### 3. Update Task Tab Details
 Update name or position of a tab.
@@ -220,3 +223,418 @@ Delete a comment.
 }
 ```
 
+
+---
+
+## Label Operations
+
+### 8. Create Label
+Add a new label to a task card.
+
+**Action**: `create_label`
+
+**Payload**:
+```json
+{
+  "task_card_id": 1,
+  "title": "Urgent",
+  "color": "red"
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "create_label",
+  "status": "success",
+  "payload": {
+    "task_card_id": 1,
+    "title": "Urgent",
+    "color": "red"
+  },
+  "data": {
+    "id": 10,
+    "task_card_id": 1,
+    "title": "Urgent",
+    "color": "red",
+    "created_at": "2025-12-20T22:45:00Z",
+    "updated_at": "2025-12-20T22:45:00Z"
+  }
+}
+```
+
+### 9. Get Labels
+Fetch all labels for a specific task card.
+
+**Action**: `get_labels`
+
+**Payload**:
+```json
+{
+  "task_card_id": 1
+}
+```
+
+**Success Response** (sent only to requesting client):
+```json
+{
+  "action": "get_labels",
+  "status": "success",
+  "payload": {
+    "task_card_id": 1
+  },
+  "data": [
+    {
+      "id": 10,
+      "task_card_id": 1,
+      "title": "Urgent",
+      "color": "red",
+      "created_at": "2025-12-20T22:45:00Z",
+      "updated_at": "2025-12-20T22:45:00Z"
+    }
+  ]
+}
+```
+
+### 10. Update Label
+Update an existing label's title or color.
+
+**Action**: `update_label`
+
+**Payload**:
+```json
+{
+  "id": 10,
+  "title": "Very Urgent",
+  "color": "darkred"
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "update_label",
+  "status": "success",
+  "payload": {
+    "id": 10,
+    "title": "Very Urgent",
+    "color": "darkred"
+  },
+  "data": {
+    "id": 10,
+    "task_card_id": 1,
+    "title": "Very Urgent",
+    "color": "darkred",
+    "created_at": "2025-12-20T22:45:00Z",
+    "updated_at": "2025-12-20T22:50:00Z"
+  }
+}
+```
+
+### 11. Delete Label
+Delete a label.
+
+**Action**: `delete_label`
+
+**Payload**:
+```json
+{
+  "id": 10
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "delete_label",
+  "status": "success",
+  "payload": {
+    "id": 10
+  },
+  "data": {
+    "id": 10
+  }
+}
+```
+
+---
+
+## TaskCardUser Operations
+
+### 12. Assign Task Card User
+Assign a user to a task card.
+
+**Action**: `assign_task_card_user`
+
+**Payload**:
+```json
+{
+  "task_card_id": 1,
+  "user_id": 10
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "assign_task_card_user",
+  "status": "success",
+  "payload": {
+    "task_card_id": 1,
+    "user_id": 10
+  },
+  "data": {
+    "id": 1,
+    "task_card_id": 1,
+    "user_id": 10,
+    "created_at": "2025-12-23T20:25:00Z",
+    "updated_at": "2025-12-23T20:25:00Z"
+  }
+}
+```
+
+### 13. Get Task Card Users
+Fetch all users assigned to a specific task card.
+
+**Action**: `get_task_card_users`
+
+**Payload**:
+```json
+{
+  "task_card_id": 1
+}
+```
+
+**Success Response** (sent only to requesting client):
+```json
+{
+  "action": "get_task_card_users",
+  "status": "success",
+  "payload": {
+    "task_card_id": 1
+  },
+  "data": [
+    {
+      "id": 1,
+      "task_card_id": 1,
+      "user_id": 10,
+      "created_at": "2025-12-23T20:25:00Z",
+      "updated_at": "2025-12-23T20:25:00Z"
+    }
+  ]
+}
+```
+
+### 14. Unassign Task Card User
+Remove a user assignment from a task card.
+
+**Action**: `unassign_task_card_user`
+
+**Payload**:
+```json
+{
+  "id": 1
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "unassign_task_card_user",
+  "status": "success",
+  "payload": {
+    "id": 1
+  },
+  "data": {
+    "id": 1
+  }
+}
+```
+
+---
+
+## BoardUser Operations
+
+### 15. Assign Board User
+Assign a user to a board.
+
+**Action**: `assign_board_user`
+
+**Payload**:
+```json
+{
+  "board_id": 1,
+  "user_id": 10
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "assign_board_user",
+  "status": "success",
+  "payload": {
+    "board_id": 1,
+    "user_id": 10
+  },
+  "data": {
+    "id": 1,
+    "board_id": 1,
+    "user_id": 10,
+    "created_at": "2025-12-23T20:30:00Z",
+    "updated_at": "2025-12-23T20:30:00Z"
+  }
+}
+```
+
+### 16. Get Board Users
+Fetch all users assigned to a specific board.
+
+**Action**: `get_board_users`
+
+**Payload**:
+```json
+{
+  "board_id": 1
+}
+```
+
+**Success Response** (sent only to requesting client):
+```json
+{
+  "action": "get_board_users",
+  "status": "success",
+  "payload": {
+    "board_id": 1
+  },
+  "data": [
+    {
+      "id": 1,
+      "board_id": 1,
+      "user_id": 10,
+      "created_at": "2025-12-23T20:30:00Z",
+      "updated_at": "2025-12-23T20:30:00Z"
+    }
+  ]
+}
+```
+
+### 17. Unassign Board User
+Remove a user assignment from a board.
+
+**Action**: `unassign_board_user`
+
+**Payload**:
+```json
+{
+  "id": 1
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "unassign_board_user",
+  "status": "success",
+  "payload": {
+    "id": 1
+  },
+  "data": {
+    "id": 1
+  }
+}
+```
+
+---
+
+## WorkspaceUser Operations
+
+### 18. Assign Workspace User
+Assign a user to a workspace.
+
+**Action**: `assign_workspace_user`
+
+**Payload**:
+```json
+{
+  "workspace_id": 1,
+  "user_id": 10
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "assign_workspace_user",
+  "status": "success",
+  "payload": {
+    "workspace_id": 1,
+    "user_id": 10
+  },
+  "data": {
+    "id": 1,
+    "workspace_id": 1,
+    "user_id": 10,
+    "created_at": "2025-12-23T20:35:00Z",
+    "updated_at": "2025-12-23T20:35:00Z"
+  }
+}
+```
+
+### 19. Get Workspace Users
+Fetch all users assigned to a specific workspace.
+
+**Action**: `get_workspace_users`
+
+**Payload**:
+```json
+{
+  "workspace_id": 1
+}
+```
+
+**Success Response** (sent only to requesting client):
+```json
+{
+  "action": "get_workspace_users",
+  "status": "success",
+  "payload": {
+    "workspace_id": 1
+  },
+  "data": [
+    {
+      "id": 1,
+      "workspace_id": 1,
+      "user_id": 10,
+      "created_at": "2025-12-23T20:35:00Z",
+      "updated_at": "2025-12-23T20:35:00Z"
+    }
+  ]
+}
+```
+
+### 20. Unassign Workspace User
+Remove a user assignment from a workspace.
+
+**Action**: `unassign_workspace_user`
+
+**Payload**:
+```json
+{
+  "id": 1
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "unassign_workspace_user",
+  "status": "success",
+  "payload": {
+    "id": 1
+  },
+  "data": {
+    "id": 1
+  }
+}
+```

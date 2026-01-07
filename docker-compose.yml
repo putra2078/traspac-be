@@ -11,8 +11,12 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=123456
       - DB_NAME=hrm_db
+      - RABBITMQ_URL=amqp://appuser:strongpassword@rabbitmq:5672/
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   postgres:
     image: postgres:latest
@@ -25,6 +29,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/migrations
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: appuser
+      RABBITMQ_DEFAULT_PASS: strongpassword
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   prometheus:
     image: prom/prometheus:latest
@@ -42,4 +64,5 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:
   prometheus_data:

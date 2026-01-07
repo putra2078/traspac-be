@@ -23,6 +23,15 @@ func (h *Handler) CreateTaskCardComment(c *gin.Context) {
 		return
 	}
 
+	// Get user_id from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	taskCardComment.UserID = userID.(uint)
+
 	if err := h.usecase.Create(&taskCardComment); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return

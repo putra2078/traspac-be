@@ -1,64 +1,83 @@
 package contact
 
-// import (
-// 	"net/http"
-// 	"strconv"
+import (
+	"net/http"
 
-// 	"github.com/gin-gonic/gin"
-// )
+	"hrm-app/internal/response"
 
-// type Handler struct {
-// 	usecase UseCase
-// }
+	"github.com/gin-gonic/gin"
+)
 
-// func NewHandler(u UseCase) *Handler {
-// 	return &Handler{usecase: u}
-// }
+type Handler struct {
+	usecase UseCase
+	bucket  string
+}
 
-// func (h *Handler) Register(c *gin.Context) {
-// 	var contact Contact
-// 	if err := c.ShouldBindJSON(&contact); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
+func NewHandler(u UseCase, bucket string) *Handler {
+	return &Handler{
+		usecase: u,
+		bucket:  bucket,
+	}
+}
 
-// 	if err := h.usecase.Register(&contact); err != nil {
-// 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-// 		return
-// 	}
+// GetMyContact gets the contact of the currently logged-in user
+func (h *Handler) GetMyContact(c *gin.Context) {
+	// Get user_id from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
 
-// 	c.JSON(http.StatusOK, gin.H{"message": "Contact registered successfully"})
-// }
+	ctx := c.Request.Context()
+	contact, err := h.usecase.GetByUserID(ctx, userID.(uint), h.bucket)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-// func (h *Handler) GetAll(c *gin.Context) {
-// 	data, err := h.usecase.GetAll()
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	if contact == nil {
+		response.Error(c, http.StatusNotFound, "Contact not found")
+		return
+	}
 
-// 	c.JSON(http.StatusOK, data)
-// }
+	response.Success(c, contact)
+}
 
-// func (h *Handler) GetByID(c *gin.Context) {
-// 	id, _ :=  strconv.Atoi(c.Param("id"))
-// 	data ,err := h.usecase.GetByID(uint(id))
+// UpdateMyContact updates the contact of the currently logged-in user
+func (h *Handler) UpdateMyContact(c *gin.Context) {
+	// Get user_id from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
 
-// 	if err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
-// 		return
-// 	}
+	var contact Contact
+	if err := c.ShouldBindJSON(&contact); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
-// 	c.JSON(http.StatusOK, data)
-// }
+	// Set the user_id to ensure user can only update their own contact
+	contact.UserID = userID.(uint)
 
-// func (h *Handler) Delete(c *gin.Context) {
-// 	id, _ := strconv.Atoi(c.Param("id"))
-// 	err := h.usecase.DeleteByID(uint(id))
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	ctx := c.Request.Context()
+	if err := h.usecase.Update(ctx, &contact); err != nil {
+		if err.Error() == "contact not found" {
+			response.Error(c, http.StatusNotFound, err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-// 	c.JSON(http.StatusOK, gin.H{"message": "Contact deleted successfully"})
-// }
+	// Fetch updated contact with public URL
+	updatedContact, err := h.usecase.GetByUserID(ctx, userID.(uint), h.bucket)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, updatedContact)
+}

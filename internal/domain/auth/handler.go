@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -62,8 +63,15 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[Login Debug] UserID: %d, Time: %v (Unix: %d)", user.ID, time.Now(), time.Now().Unix())
+	log.Printf("[Login Debug] Generated Token: %s", accessToken)
+
 	// Store session in Redis (Access Token)
-	err = utils.SetSession(user.ID, accessToken, time.Duration(h.cfg.JWT.ExpiresInMinutes)*time.Minute)
+	expMinutes := h.cfg.JWT.ExpiresInMinutes
+	if expMinutes == 0 {
+		expMinutes = 15
+	}
+	err = utils.SetSession(user.ID, accessToken, time.Duration(expMinutes)*time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "InternalServerError",
@@ -129,7 +137,11 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	}
 
 	// Store new session
-	utils.SetSession(claims.UserID, accessToken, time.Duration(h.cfg.JWT.ExpiresInMinutes)*time.Minute)
+	expMinutes := h.cfg.JWT.ExpiresInMinutes
+	if expMinutes == 0 {
+		expMinutes = 15
+	}
+	utils.SetSession(claims.UserID, accessToken, time.Duration(expMinutes)*time.Minute)
 
 	// Update cookies
 	c.SetCookie("access_token", accessToken, h.cfg.JWT.ExpiresInMinutes*60, "/", "", false, true)

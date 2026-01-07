@@ -20,5 +20,16 @@ redis:
 
 jwt:
   secret: "supersecretkey"
-  expires_in_minute: 15
+  expires_in_minute: 1440
+  token_ttl_minute: 1440
   refresh_expires_in_days: 7
+kafka:
+  brokers: ["localhost:9092"]
+
+supabase:
+  s3:
+    endpoint: "https://cqfisbvirkhgcqvfzofj.storage.supabase.co/storage/v1/s3"
+    region: "ap-southeast-1"
+    access_key_id: "e24c787128db84379277dd251341b2da"
+    secret_access_key: "b72d11dc4441a972a814fa7db7b5994bbad4c5beda6ebaddb026d53cebb480c7"
+    bucket: "user-uploads"

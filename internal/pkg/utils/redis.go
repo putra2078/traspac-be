@@ -24,3 +24,8 @@ func DeleteSession(userID uint, token string) error {
 	key := fmt.Sprintf("session:%d:%s", userID, token)
 	return database.RDB.Del(ctx, key).Err()
 }
+
+func ExtendSession(userID uint, token string, exp time.Duration) error {
+	key := fmt.Sprintf("session:%d:%s", userID, token)
+	return database.RDB.Expire(ctx, key, exp).Err()
+}

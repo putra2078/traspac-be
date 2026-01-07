@@ -1,0 +1,7 @@
+CREATE TABLE task_card_attachments (
+	id SERIAL PRIMARY KEY,
+	task_card_id INTEGER NOT NULL,
+	attachment_url TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

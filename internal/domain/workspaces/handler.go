@@ -38,7 +38,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Workspace created successfully", "data": workspace})
+	response.Success(c, workspace)
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
@@ -59,9 +59,16 @@ func (h *Handler) GetByID(c *gin.Context) {
 		return
 	}
 
-	workspace, err := h.usecase.GetByID(uint(id))
+	// Get user_id from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	workspace, err := h.usecase.GetByID(uint(id), userID.(uint))
 	if err != nil {
-		response.Error(c, http.StatusNotFound, "Workspace not found")
+		response.Error(c, http.StatusForbidden, err.Error())
 		return
 	}
 
@@ -108,6 +115,22 @@ func (h *Handler) GetByUserID(c *gin.Context) {
 	response.Success(c, workspaces)
 }
 
+func (h *Handler) GetGuestWorkspaces(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	workspaces, err := h.usecase.GetGuestWorkspaces(userID.(uint))
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, workspaces)
+}
+
 func (h *Handler) Delete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
@@ -116,8 +139,15 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.DeleteByID(uint(id)); err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to delete workspace")
+	// Get user_id from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if err := h.usecase.DeleteByID(uint(id), userID.(uint)); err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

@@ -22,3 +22,6 @@ vendor/
 
 # Environment
 .env
+
+# Configuration files with sensitive data
+config/config.yaml
