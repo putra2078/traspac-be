@@ -89,7 +89,15 @@ func (h *Handler) UpdateBoard(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	if idInt < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid board ID")
+		return
+	}
+
 	boards.ID = uint(idInt)
+
+
 	ctx := c.Request.Context()
 	if err := h.usecase.Update(ctx, &boards); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())

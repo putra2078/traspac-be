@@ -182,10 +182,18 @@ func (m *ChannelManager) startIdleCleanup() {
 
 			if now.Sub(lastActivity) > idleTimeout {
 				log.Printf("🧹 Closing idle channel for user %s", userID)
-				m.CloseUserChannel(userID)
+
+				if err := m.CloseUserChannel(userID); err != nil {
+					log.Printf(
+						"❌ Failed to close idle channel for user %s: %v",
+						userID,
+						err,
+					)
+				}
 			}
 
 			return true
 		})
 	}
 }
+
