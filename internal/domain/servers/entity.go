@@ -1,16 +1,14 @@
-package workspaces
+package servers
 
-import (
-	"time"
-)
+import "time"
 
-type Workspace struct {
+type Server struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	CreatedBy uint      `json:"created_by"`
-	PassCode  string    `json:"pass_code"`
 	Name      string    `json:"name"`
 	Privacy   string    `json:"privacy"`
-	JoinLink  string    `json:"join_link"`
+	PassCode  string    `json:"pass_code"`
+	LinkJoin  string    `json:"link_join"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Updatedat time.Time `json:"updated_at"`
 }

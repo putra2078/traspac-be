@@ -22,5 +22,3 @@ func GenerateShortPasscode() string {
 func GenerateLinkJoin() string {
 	return "https://traspac.com/join/" + GenerateShortPasscode()
 }
-
-
