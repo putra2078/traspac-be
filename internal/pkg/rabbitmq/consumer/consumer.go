@@ -5,10 +5,9 @@ import (
 	"log"
 	"sync"
 
+	amqp "github.com/rabbitmq/amqp091-go"
 	"hrm-app/internal/pkg/rabbitmq/config"
 	"hrm-app/internal/pkg/rabbitmq/worker"
-	amqp "github.com/rabbitmq/amqp091-go"
-	
 )
 
 func Start(ctx context.Context, ch *amqp.Channel) error {
@@ -50,51 +49,50 @@ func Start(ctx context.Context, ch *amqp.Channel) error {
 	}
 }
 
-
 // MessageHandler adalah callback untuk handle message
 type MessageHandler func(context.Context, amqp.Delivery) error
 
 // StartForUser - consumer untuk specific user
 func StartForUser(ctx context.Context, ch *amqp.Channel, userID string, handler MessageHandler) error {
-    queueName := config.GetUserQueueName(userID)
-    
-    msgs, err := ch.Consume(
-        queueName,
-        "",    // consumer tag
-        false, // auto-ack
-        false, // exclusive
-        false, // no-local
-        false, // no-wait
-        nil,
-    )
-    if err != nil {
-        return err
-    }
+	queueName := config.GetUserQueueName(userID)
 
-    go func() {
-        for {
-            select {
-            case msg, ok := <-msgs:
-                if !ok {
-                    log.Printf("Consumer channel closed for user %s", userID)
-                    return
-                }
+	msgs, err := ch.Consume(
+		queueName,
+		"",    // consumer tag
+		false, // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,
+	)
+	if err != nil {
+		return err
+	}
 
-                // Handle message
-                if err := handler(ctx, msg); err != nil {
-                    log.Printf("Error handling message for user %s: %v", userID, err)
-                    msg.Nack(false, true) // requeue
-                } else {
-                    msg.Ack(false)
-                }
+	go func() {
+		for {
+			select {
+			case msg, ok := <-msgs:
+				if !ok {
+					log.Printf("Consumer channel closed for user %s", userID)
+					return
+				}
 
-            case <-ctx.Done():
-                log.Printf("Consumer stopped for user %s", userID)
-                return
-            }
-        }
-    }()
+				// Handle message
+				if err := handler(ctx, msg); err != nil {
+					log.Printf("Error handling message for user %s: %v", userID, err)
+					msg.Nack(false, true) // requeue
+				} else {
+					msg.Ack(false)
+				}
 
-    log.Printf("✅ Consumer started for user %s", userID)
-    return nil
+			case <-ctx.Done():
+				log.Printf("Consumer stopped for user %s", userID)
+				return
+			}
+		}
+	}()
+
+	log.Printf("✅ Consumer started for user %s", userID)
+	return nil
 }
