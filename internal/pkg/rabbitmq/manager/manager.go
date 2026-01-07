@@ -196,4 +196,3 @@ func (m *ChannelManager) startIdleCleanup() {
 		})
 	}
 }
-
