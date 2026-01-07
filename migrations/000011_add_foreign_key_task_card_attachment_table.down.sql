@@ -1,0 +1,1 @@
+ALTER TABLE task_card_attachments DROP CONSTRAINT fk_task_card_attachments_task_card_id;

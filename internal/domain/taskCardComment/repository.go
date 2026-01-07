@@ -25,19 +25,19 @@ func (r *repository) Create(taskCardComment *TaskCardComment) error {
 
 func (r *repository) FindAll() ([]TaskCardComment, error) {
 	var taskCardComments []TaskCardComment
-	err := database.DB.Find(&taskCardComments).Error
+	err := database.DB.Preload("User").Find(&taskCardComments).Error
 	return taskCardComments, err
 }
 
 func (r *repository) FindByID(id uint) (*TaskCardComment, error) {
 	var taskCardComment TaskCardComment
-	err := database.DB.First(&taskCardComment, id).Error
+	err := database.DB.Preload("User").First(&taskCardComment, id).Error
 	return &taskCardComment, err
 }
 
 func (r *repository) FindByTaskCardID(taskCardID uint) ([]TaskCardComment, error) {
 	var taskCardComments []TaskCardComment
-	err := database.DB.Where("task_card_id = ?", taskCardID).Find(&taskCardComments).Error
+	err := database.DB.Preload("User").Where("task_card_id = ?", taskCardID).Order("updated_at DESC, created_at DESC").Find(&taskCardComments).Error
 	return taskCardComments, err
 }
 

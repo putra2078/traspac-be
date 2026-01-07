@@ -12,15 +12,18 @@ CREATE TABLE users (
 -- table contacts --
 CREATE TABLE contacts (
     id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     photo VARCHAR(500) NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    phone_number VARCHAR(20),
-    address TEXT,
-    gender VARCHAR(15) CHECK (gender IN ('male', 'female', 'other')),
-    birth_date DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_users_contacts
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
 );
 
 
@@ -61,12 +64,19 @@ CREATE TABLE boards (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(255) NOT NULL,
 	workspace_id INT NOT NULL,
+	created_by INT NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_workspace_boards
     FOREIGN KEY (workspace_id)
     REFERENCES workspaces(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+    CONSTRAINT fk_boards_creator
+    FOREIGN KEY (created_by)
+    REFERENCES users(id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT
 );
@@ -128,28 +138,11 @@ CREATE TABLE task_card_users (
     ON DELETE RESTRICT
 );
 
--- table servers --
-CREATE TABLE servers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_by INT NOT NULL,
-    privacy VARCHAR(15) CHECK (privacy IN ('public', 'private')),
-    pass_code VARCHAR(255) NULL,
-    link_join VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_server_creator
-    FOREIGN KEY (created_by)
-    REFERENCES users(id)
-    ON UPDATE CASCADE
-    ON DELETE RESTRICT
-);
 
 -- table room_chat --
 CREATE TABLE rooms_chats (
     id SERIAL PRIMARY KEY,
-    server_id INT NOT NULL,
+    workspace_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     created_by INT NOT NULL,
     pass_code VARCHAR(255) NULL,
@@ -163,11 +156,31 @@ CREATE TABLE rooms_chats (
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
 
-    CONSTRAINT fk_room_server
-    FOREIGN KEY (server_id)
-    REFERENCES servers(id)
+    CONSTRAINT fk_room_workspace
+    FOREIGN KEY (workspace_id)
+    REFERENCES workspaces(id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT
+);
+
+CREATE TABLE room_users (
+    id SERIAL PRIMARY KEY,
+    room_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_room_users_room
+        FOREIGN KEY (room_id)
+        REFERENCES rooms_chats(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_room_users_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
 );
 
 -- table room_messages --
@@ -196,4 +209,46 @@ CREATE TABLE direct_messages (
     message_content VARCHAR(500) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- table workspaces users --
+CREATE TABLE workspaces_users (
+    id SERIAL PRIMARY KEY,
+    workspace_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_workspace_users
+    FOREIGN KEY (workspace_id)
+    REFERENCES workspaces(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+    CONSTRAINT fk_user_workspace_users
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
+);
+
+-- table boards users --
+CREATE TABLE boards_users (
+    id SERIAL PRIMARY KEY,
+    board_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_boards_users
+    FOREIGN KEY (board_id)
+    REFERENCES boards(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+    CONSTRAINT fk_user_boards_users
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
 );

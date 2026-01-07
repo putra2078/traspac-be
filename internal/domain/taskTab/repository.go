@@ -9,7 +9,7 @@ type Repository interface {
 	FindAll() ([]TaskTab, error)
 	FindByID(id uint) (*TaskTab, error)
 	FindByBoardID(boardID uint) ([]TaskTab, error)
-	FindSummaryByBoardID(boardID uint) ([]TaskTab, error)
+	CreateBatch(taskTabs []TaskTab) error
 	Update(taskTab *TaskTab) error
 	Delete(id uint) error
 }
@@ -46,6 +46,10 @@ func (r *repository) FindSummaryByBoardID(boardID uint) ([]TaskTab, error) {
 	var taskTabs []TaskTab
 	err := database.DB.Select("id, board_id, position, name").Where("board_id = ?", boardID).Find(&taskTabs).Error
 	return taskTabs, err
+}
+
+func (r *repository) CreateBatch(taskTabs []TaskTab) error {
+	return database.DB.Create(taskTabs).Error
 }
 
 func (r *repository) Update(taskTab *TaskTab) error {

@@ -11,6 +11,7 @@ type Config struct {
 	Server struct {
 		Port int
 	}
+
 	Database struct {
 		Host     string
 		Port     int
@@ -19,17 +20,34 @@ type Config struct {
 		Name     string
 		Sslmode  string
 	}
+
 	Redis struct {
 		Host     string
 		Port     int
 		Password string
 		Db       int
 	}
+
 	JWT struct {
 		Secret               string `mapstructure:"secret"`
 		ExpiresInMinutes     int    `mapstructure:"expires_in_minute"`
+		TokenTTLMinutes      int    `mapstructure:"token_ttl_minute"`
 		RefreshExpiresInDays int    `mapstructure:"refresh_expires_in_days"`
 	}
+
+	Kafka struct {
+		Brokers []string
+	}
+
+	Supabase struct {
+		S3 struct {
+			Endpoint        string `mapstructure:"endpoint"`
+			Region          string `mapstructure:"region"`
+			AccessKeyID     string `mapstructure:"access_key_id"`
+			SecretAccessKey string `mapstructure:"secret_access_key"`
+			Bucket          string `mapstructure:"bucket"`
+		} `mapstructure:"s3"`
+	} `mapstructure:"supabase"`
 }
 
 func LoadConfig() *Config {

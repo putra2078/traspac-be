@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"hrm-app/config"
 	"hrm-app/internal/pkg/utils"
@@ -28,6 +29,11 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 					tokenStr = parts[1]
 				}
 			}
+		}
+
+		// 3. Jika masih tidak ada, coba ambil dari query parameter (untuk WebSocket)
+		if tokenStr == "" {
+			tokenStr = c.Query("token")
 		}
 
 		if tokenStr == "" {
@@ -62,6 +68,17 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		c.Set("claims", claims)
 		c.Set("user_id", claims.UserID)
 		c.Set("email", claims.Email)
+
+		// 5. Extend Session (Activity Check / Sliding Window)
+		// Kita perpanjang session setiap kali ada request agar tidak expired selama user aktif
+		expMinutes := cfg.JWT.ExpiresInMinutes
+		if expMinutes == 0 {
+			expMinutes = 15
+		}
+		_ = utils.ExtendSession(claims.UserID, tokenStr, time.Duration(expMinutes)*time.Minute)
+
+		// 6. Perbarui Cookie Access Token agar browser tidak menghapus cookie sebelum Redis expired
+		c.SetCookie("access_token", tokenStr, expMinutes*60, "/", "", false, true)
 
 		c.Next()
 	}

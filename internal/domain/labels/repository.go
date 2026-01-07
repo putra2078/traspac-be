@@ -9,6 +9,7 @@ type Repository interface {
 	FindAll() ([]TaskCardLabel, error)
 	FindByID(id uint) (*TaskCardLabel, error)
 	FindByTaskCardID(taskCardID uint) ([]TaskCardLabel, error)
+	FindByTaskCardIDs(taskCardIDs []uint) ([]TaskCardLabel, error)
 	Update(label *TaskCardLabel) error
 	Delete(id uint) error
 }
@@ -38,6 +39,12 @@ func (r *repository) FindByID(id uint) (*TaskCardLabel, error) {
 func (r *repository) FindByTaskCardID(taskCardID uint) ([]TaskCardLabel, error) {
 	var labels []TaskCardLabel
 	err := database.DB.Where("task_card_id = ?", taskCardID).Find(&labels).Error
+	return labels, err
+}
+
+func (r *repository) FindByTaskCardIDs(taskCardIDs []uint) ([]TaskCardLabel, error) {
+	var labels []TaskCardLabel
+	err := database.DB.Where("task_card_id IN ?", taskCardIDs).Find(&labels).Error
 	return labels, err
 }
 

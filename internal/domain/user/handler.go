@@ -21,12 +21,15 @@ func NewHandler(u UseCase) *Handler {
 
 func (h *Handler) Register(c *gin.Context) {
 	var req RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+
+	// Try to bind multipart/form-data (or JSON if sent as such, though file upload requires multipart)
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.usecase.Register(&req); err != nil {
+	// Pass context to usecase for upload cancellation support
+	if err := h.usecase.Register(c.Request.Context(), &req); err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
@@ -82,4 +85,27 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	response.DeleteSuccess(c, "User deleted successfully")
+}
+
+func (h *Handler) Update(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil || id < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
+		return
+	}
+
+	var req UpdateRequest
+	// Bind multipart/form-data or JSON
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.usecase.Update(c.Request.Context(), uint(id), &req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 }

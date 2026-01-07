@@ -24,7 +24,8 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.Create(&taskCard); err != nil {
+	ctx := c.Request.Context()
+	if err := h.usecase.Create(ctx, &taskCard); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -33,7 +34,8 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	taskCards, err := h.usecase.FindAll()
+	ctx := c.Request.Context()
+	taskCards, err := h.usecase.FindAll(ctx)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -45,12 +47,13 @@ func (h *Handler) GetAll(c *gin.Context) {
 func (h *Handler) GetByID(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
-	taskCard, err := h.usecase.FindByID(uint(id))
+	ctx := c.Request.Context()
+	taskCard, err := h.usecase.FindByID(ctx, uint(id))
 	if err != nil {
 		response.Error(c, http.StatusNotFound, err.Error())
 		return
@@ -62,8 +65,8 @@ func (h *Handler) GetByID(c *gin.Context) {
 func (h *Handler) Update(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
@@ -75,7 +78,8 @@ func (h *Handler) Update(c *gin.Context) {
 
 	taskCard.ID = uint(id)
 
-	if err := h.usecase.Update(&taskCard); err != nil {
+	ctx := c.Request.Context()
+	if err := h.usecase.Update(ctx, &taskCard); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -86,12 +90,13 @@ func (h *Handler) Update(c *gin.Context) {
 func (h *Handler) Delete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
-	if err := h.usecase.Delete(uint(id)); err != nil {
+	ctx := c.Request.Context()
+	if err := h.usecase.Delete(ctx, uint(id)); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -102,12 +107,13 @@ func (h *Handler) Delete(c *gin.Context) {
 func (h *Handler) GetByTaskTabID(c *gin.Context) {
 	taskTabIDParam := c.Param("task_tab_id")
 	taskTabID, err := strconv.Atoi(taskTabIDParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || taskTabID < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid task tab ID parameter")
 		return
 	}
 
-	taskCards, err := h.usecase.FindByTaskTabID(uint(taskTabID))
+	ctx := c.Request.Context()
+	taskCards, err := h.usecase.FindByTaskTabID(ctx, uint(taskTabID))
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return

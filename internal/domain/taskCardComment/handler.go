@@ -23,6 +23,15 @@ func (h *Handler) CreateTaskCardComment(c *gin.Context) {
 		return
 	}
 
+	// Get user_id from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	taskCardComment.UserID = userID.(uint)
+
 	if err := h.usecase.Create(&taskCardComment); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
@@ -44,8 +53,8 @@ func (h *Handler) GetAllTaskCardComment(c *gin.Context) {
 func (h *Handler) GetTaskCardCommentByID(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
@@ -61,8 +70,8 @@ func (h *Handler) GetTaskCardCommentByID(c *gin.Context) {
 func (h *Handler) GetTaskCardCommentByTaskCardID(c *gin.Context) {
 	taskCardIDParam := c.Param("task_card_id")
 	taskCardID, err := strconv.Atoi(taskCardIDParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || taskCardID < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid task card ID parameter")
 		return
 	}
 
@@ -102,8 +111,8 @@ func (h *Handler) UpdateTaskCardComment(c *gin.Context) {
 func (h *Handler) DeleteTaskCardComment(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
