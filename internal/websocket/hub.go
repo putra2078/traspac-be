@@ -173,7 +173,7 @@ func (h *Hub) Shutdown() {
 			h.rmqPool.Close()
 		}
 		if h.rabbitmqConn != nil {
-			h.rabbitmqConn.Close()
+			_ = h.rabbitmqConn.Close()
 		}
 
 		// Close all user channels
@@ -253,11 +253,11 @@ func (h *Hub) Run() {
 
 				// Cleanup RabbitMQ resources for this user
 				if client.userID != "" {
-					h.channelMgr.CloseUserChannel(client.userID)
+					_ = h.channelMgr.CloseUserChannel(client.userID)
 					h.rateLimiter.RemoveUser(client.userID)
 				} else if client.UserID != 0 {
 					userIDStr := strconv.FormatUint(uint64(client.UserID), 10)
-					h.channelMgr.CloseUserChannel(userIDStr)
+					_ = h.channelMgr.CloseUserChannel(userIDStr)
 					h.rateLimiter.RemoveUser(userIDStr)
 				}
 
@@ -675,12 +675,16 @@ func (h *Hub) broadcastToLocalChatRoom(roomID uint, message []byte) {
 
 // Helper function to write Kafka errors (non-blocking)
 func (h *Hub) writeKafkaError(errMsg string) {
-	f, err := os.OpenFile("kafka_error.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile("kafka_error.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Printf("Failed to open kafka_error.log: %v", err)
 		return
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("Failed to close kafka_error.log: %v", err)
+		}
+	}()
 
 	if _, err := f.WriteString(errMsg + "\n"); err != nil {
 		log.Printf("Failed to write to kafka_error.log: %v", err)
@@ -735,7 +739,9 @@ func (h *Hub) subscribeToRabbitMQ() {
 			if err := json.Unmarshal(msg.Body, &msgData); err == nil {
 				// Skip if message from this instance
 				if sourceID, ok := msgData["_source_id"].(string); ok && sourceID == h.instanceID {
-					msg.Ack(false)
+					if err := msg.Ack(false); err != nil {
+						log.Printf("Failed to ack message: %v", err)
+					}
 					continue
 				}
 			}
@@ -760,7 +766,9 @@ func (h *Hub) subscribeToRabbitMQ() {
 			}
 
 			// Acknowledge message
-			msg.Ack(false)
+			if err := msg.Ack(false); err != nil {
+				log.Printf("Failed to ack message: %v", err)
+			}
 		}
 	}
 }

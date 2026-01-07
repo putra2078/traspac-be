@@ -57,12 +57,20 @@ func (h *CommentHandler) HandleCreateTaskCardComment(client Client, payload json
 		return
 	}
 
+	if comment.ID < 0 {
+		h.SendError(client, "create_task_card_comment", "Invalid comment ID")
+		return
+	}
 	fullComment, err := h.taskCardCommentUseCase.FindByID(uint(comment.ID))
 	if err != nil {
 		h.SendError(client, "create_task_card_comment", "Failed to fetch created comment")
 		return
 	}
 
+	if msg.TaskCardID < 0 {
+		h.SendError(client, "create_task_card_comment", "Invalid task card ID")
+		return
+	}
 	taskCard, err := h.taskCardUseCase.FindByID(context.Background(), uint(msg.TaskCardID))
 	if err != nil {
 		h.SendError(client, "create_task_card_comment", "Task card not found")
@@ -85,6 +93,10 @@ func (h *CommentHandler) HandleUpdateTaskCardComment(client Client, payload json
 		return
 	}
 
+	if msg.ID < 0 {
+		h.SendError(client, "update_task_card_comment", "Invalid comment ID")
+		return
+	}
 	comment, err := h.taskCardCommentUseCase.FindByID(uint(msg.ID))
 	if err != nil {
 		h.SendError(client, "update_task_card_comment", "Comment not found")
@@ -98,6 +110,10 @@ func (h *CommentHandler) HandleUpdateTaskCardComment(client Client, payload json
 		return
 	}
 
+	if comment.TaskCardID < 0 {
+		h.SendError(client, "update_task_card_comment", "Invalid task card ID")
+		return
+	}
 	taskCard, err := h.taskCardUseCase.FindByID(context.Background(), uint(comment.TaskCardID))
 	if err != nil {
 		h.SendError(client, "update_task_card_comment", "Task card not found")
@@ -120,12 +136,20 @@ func (h *CommentHandler) HandleDeleteTaskCardComment(client Client, payload json
 		return
 	}
 
+	if msg.ID < 0 {
+		h.SendError(client, "delete_task_card_comment", "Invalid comment ID")
+		return
+	}
 	comment, err := h.taskCardCommentUseCase.FindByID(uint(msg.ID))
 	if err != nil {
 		h.SendError(client, "delete_task_card_comment", "Comment not found")
 		return
 	}
 
+	if comment.TaskCardID < 0 {
+		h.SendError(client, "delete_task_card_comment", "Invalid task card ID")
+		return
+	}
 	taskCard, err := h.taskCardUseCase.FindByID(context.Background(), uint(comment.TaskCardID))
 	if err != nil {
 		h.SendError(client, "delete_task_card_comment", "Task card not found")

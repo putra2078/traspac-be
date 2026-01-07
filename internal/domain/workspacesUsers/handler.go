@@ -41,7 +41,7 @@ func (h *Handler) Create(c *gin.Context) {
 func (h *Handler) GetByWorkspaceID(c *gin.Context) {
 	workspaceID := c.Param("workspace_id")
 	workspaceIDInt, err := strconv.Atoi(workspaceID)
-	if err != nil {
+	if err != nil || workspaceIDInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid workspace_id parameter")
 		return
 	}
@@ -74,7 +74,7 @@ func (h *Handler) GetByUserID(c *gin.Context) {
 func (h *Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
-	if err != nil {
+	if err != nil || idInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid id parameter")
 		return
 	}
@@ -91,7 +91,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 func (h *Handler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
-	if err != nil {
+	if err != nil || idInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid id parameter")
 		return
 	}
@@ -107,7 +107,7 @@ func (h *Handler) Delete(c *gin.Context) {
 func (h *Handler) Update(c *gin.Context) {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
-	if err != nil {
+	if err != nil || idInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid id parameter")
 		return
 	}

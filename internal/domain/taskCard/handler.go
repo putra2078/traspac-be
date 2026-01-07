@@ -47,8 +47,8 @@ func (h *Handler) GetAll(c *gin.Context) {
 func (h *Handler) GetByID(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
@@ -65,8 +65,8 @@ func (h *Handler) GetByID(c *gin.Context) {
 func (h *Handler) Update(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
@@ -90,8 +90,8 @@ func (h *Handler) Update(c *gin.Context) {
 func (h *Handler) Delete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid ID parameter")
 		return
 	}
 
@@ -107,8 +107,8 @@ func (h *Handler) Delete(c *gin.Context) {
 func (h *Handler) GetByTaskTabID(c *gin.Context) {
 	taskTabIDParam := c.Param("task_tab_id")
 	taskTabID, err := strconv.Atoi(taskTabIDParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || taskTabID < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid task tab ID parameter")
 		return
 	}
 

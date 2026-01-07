@@ -122,7 +122,7 @@ func (h *Handler) HandleWebSocket(c *gin.Context) {
 	// Setup RabbitMQ for this user
 	if err := client.setupRabbitMQ(); err != nil {
 		log.Printf("Failed to setup RabbitMQ for %d: %v", userID, err)
-		client.conn.Close()
+		_ = client.conn.Close()
 		return
 	}
 
@@ -138,13 +138,13 @@ func (h *Handler) handleMessages(client *Client) {
 			client.Cancel()
 		}
 		client.hub.unregister <- client
-		client.conn.Close()
+		_ = client.conn.Close()
 	}()
 
 	// Configure WebSocket connection safety
 	client.conn.SetReadLimit(512) // Hardcoded 512 bytes limit for text messages
-	client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	client.conn.SetPongHandler(func(string) error { client.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
+	_ = client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	client.conn.SetPongHandler(func(string) error { _ = client.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
 
 	for {
 		_, message, err := client.conn.ReadMessage()

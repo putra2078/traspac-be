@@ -44,7 +44,7 @@ func (u *usecase) Create(workspace *Workspace) error {
 	if err == nil {
 		// Example URL, you can adjust the base URL as needed
 		workspace.JoinLink = fmt.Sprintf("http://be.putratek.my.id/api/v1/workspaces/join?token=%s", token)
-		u.repo.Update(workspace)
+		_ = u.repo.Update(workspace)
 	}
 
 	// Add creator to workspace users

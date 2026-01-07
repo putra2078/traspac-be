@@ -9,6 +9,7 @@ import (
 	"time"
 
 
+
 	"github.com/gorilla/websocket"
 )
 
@@ -310,7 +311,7 @@ func (c *Client) Close() {
 	if c.Cancel != nil {
 		c.Cancel()
 	}
-	c.conn.Close()
+	_ = c.conn.Close()
 }
 func (c *Client) GetContext() context.Context { return c.Ctx }
 
@@ -353,7 +354,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	// Setup RabbitMQ for this user
 	if err := client.setupRabbitMQ(); err != nil {
 		log.Printf("Failed to setup RabbitMQ for %s: %v", userID, err)
-		client.conn.Close()
+		_ = client.conn.Close()
 		return
 	}
 
@@ -403,12 +404,12 @@ func (c *Client) readPump() {
 	defer func() {
 		c.Cancel()
 		c.hub.unregister <- c
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
 
@@ -493,15 +494,15 @@ func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	for {
 		select {
 		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -509,13 +510,13 @@ func (c *Client) writePump() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
+			_, _ = w.Write(message)
 
 			// Add queued messages
 			n := len(c.send)
 			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.send)
+				_, _ = w.Write([]byte{'\n'})
+				_, _ = w.Write(<-c.send)
 			}
 
 			if err := w.Close(); err != nil {
@@ -523,7 +524,7 @@ func (c *Client) writePump() {
 			}
 
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}

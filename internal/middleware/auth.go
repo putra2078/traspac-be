@@ -75,7 +75,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		if expMinutes == 0 {
 			expMinutes = 15
 		}
-		utils.ExtendSession(claims.UserID, tokenStr, time.Duration(expMinutes)*time.Minute)
+		_ = utils.ExtendSession(claims.UserID, tokenStr, time.Duration(expMinutes)*time.Minute)
 
 		// 6. Perbarui Cookie Access Token agar browser tidak menghapus cookie sebelum Redis expired
 		c.SetCookie("access_token", tokenStr, expMinutes*60, "/", "", false, true)

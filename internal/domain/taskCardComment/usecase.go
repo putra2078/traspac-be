@@ -40,6 +40,9 @@ func (u *usecase) FindByID(id uint) (*TaskCardComment, error) {
 
 func (u *usecase) Update(taskCardComment *TaskCardComment) error {
 	// Check if taskCardComment exists
+	if taskCardComment.ID < 0 {
+		return errors.New("invalid comment ID")
+	}
 	if _, err := u.repo.FindByID(uint(taskCardComment.ID)); err != nil {
 		return err
 	}

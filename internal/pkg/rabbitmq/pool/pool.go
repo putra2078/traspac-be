@@ -61,7 +61,7 @@ func (p *ChannelPool) Put(ch *amqp.Channel) {
 		// Returned to pool
 	default:
 		// Pool full, close channel
-		ch.Close()
+		_ = ch.Close()
 	}
 }
 
@@ -71,7 +71,7 @@ func (p *ChannelPool) Close() {
 
 	close(p.channels)
 	for ch := range p.channels {
-		ch.Close()
+		_ = ch.Close()
 	}
 	log.Println("🌊 Channel pool closed")
 }

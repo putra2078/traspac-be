@@ -63,7 +63,7 @@ func (m *ChannelManager) CreateUserChannel(ctx context.Context, userID string) (
 
 	// Set QoS
 	if err := ch.Qos(config.Prefetch, 0, false); err != nil {
-		ch.Close()
+		_ = ch.Close()
 		return nil, fmt.Errorf("failed to set QoS: %w", err)
 	}
 

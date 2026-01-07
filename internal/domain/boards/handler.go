@@ -53,7 +53,7 @@ func (h *Handler) GetAllBoard(c *gin.Context) {
 func (h *Handler) GetBoardByID(c *gin.Context) {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
-	if err != nil {
+	if err != nil || idInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid board ID")
 		return
 	}
@@ -101,7 +101,7 @@ func (h *Handler) UpdateBoard(c *gin.Context) {
 func (h *Handler) DeleteBoard(c *gin.Context) {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
-	if err != nil {
+	if err != nil || idInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid board ID")
 		return
 	}
@@ -116,7 +116,7 @@ func (h *Handler) DeleteBoard(c *gin.Context) {
 func (h *Handler) GetByWorkspaceID(c *gin.Context) {
 	workspaceID := c.Param("workspace_id")
 	workspaceIDInt, err := strconv.Atoi(workspaceID)
-	if err != nil {
+	if err != nil || workspaceIDInt < 0 {
 		response.Error(c, http.StatusBadRequest, "Invalid workspace ID")
 		return
 	}

@@ -5,9 +5,10 @@ import (
 	"log"
 	"sync"
 
-	amqp "github.com/rabbitmq/amqp091-go"
 	"hrm-app/internal/pkg/rabbitmq/config"
 	"hrm-app/internal/pkg/rabbitmq/worker"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func Start(ctx context.Context, ch *amqp.Channel) error {
@@ -81,9 +82,13 @@ func StartForUser(ctx context.Context, ch *amqp.Channel, userID string, handler 
 				// Handle message
 				if err := handler(ctx, msg); err != nil {
 					log.Printf("Error handling message for user %s: %v", userID, err)
-					msg.Nack(false, true) // requeue
+					if nackErr := msg.Nack(false, true); nackErr != nil {
+						log.Printf("Failed to Nack message for user %s: %v", userID, nackErr)
+					}
 				} else {
-					msg.Ack(false)
+					if ackErr := msg.Ack(false); ackErr != nil {
+						log.Printf("Failed to Ack message for user %s: %v", userID, ackErr)
+					}
 				}
 
 			case <-ctx.Done():

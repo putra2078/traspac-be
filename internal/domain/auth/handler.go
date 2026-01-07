@@ -106,7 +106,7 @@ func (h *Handler) Logout(c *gin.Context) {
 	if token != "" {
 		claims, err := utils.ValidateToken(h.cfg, token)
 		if err == nil {
-			utils.DeleteSession(claims.UserID, token)
+			_ = utils.DeleteSession(claims.UserID, token)
 		}
 	}
 
@@ -141,7 +141,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	if expMinutes == 0 {
 		expMinutes = 15
 	}
-	utils.SetSession(claims.UserID, accessToken, time.Duration(expMinutes)*time.Minute)
+	_ = utils.SetSession(claims.UserID, accessToken, time.Duration(expMinutes)*time.Minute)
 
 	// Update cookies
 	c.SetCookie("access_token", accessToken, h.cfg.JWT.ExpiresInMinutes*60, "/", "", false, true)

@@ -36,7 +36,7 @@ func (h *Handler) CreateTaskCardUser(c *gin.Context) {
 func (h *Handler) GetTaskCardUserByTaskCardID(c *gin.Context) {
 	taskCardIDParam := c.Param("task_card_id")
 	taskCardID, err := strconv.Atoi(taskCardIDParam)
-	if err != nil {
+	if err != nil || taskCardID < 0 {
 		response.Error(c, http.StatusBadRequest, "invalid task card id")
 		return
 	}
@@ -53,8 +53,8 @@ func (h *Handler) GetTaskCardUserByTaskCardID(c *gin.Context) {
 func (h *Handler) Update(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid id parameter")
 		return
 	}
 
@@ -77,8 +77,8 @@ func (h *Handler) Update(c *gin.Context) {
 func (h *Handler) Delete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+	if err != nil || id < 0 {
+		response.Error(c, http.StatusBadRequest, "Invalid id parameter")
 		return
 	}
 

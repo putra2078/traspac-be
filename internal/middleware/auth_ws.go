@@ -95,7 +95,7 @@ func AuthMiddlewareWS(cfg *config.Config) gin.HandlerFunc {
 		if expMinutes == 0 {
 			expMinutes = 60 // Default can follow config or 60
 		}
-		utils.ExtendSession(claims.UserID, tokenStr, time.Duration(expMinutes)*time.Minute)
+		_ = utils.ExtendSession(claims.UserID, tokenStr, time.Duration(expMinutes)*time.Minute)
 
 		c.Next()
 	}

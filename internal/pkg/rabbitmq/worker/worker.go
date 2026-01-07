@@ -20,11 +20,15 @@ func Start(
 
 		if err := process(msg.Body); err != nil {
 			log.Printf("[worker %d] error: %v", id, err)
-			msg.Nack(false, false) // no requeue → DLQ
+			if nackErr := msg.Nack(false, false); nackErr != nil {
+				log.Printf("[worker %d] failed to Nack: %v", id, nackErr)
+			}
 			continue
 		}
 
-		msg.Ack(false)
+		if ackErr := msg.Ack(false); ackErr != nil {
+			log.Printf("[worker %d] failed to Ack: %v", id, ackErr)
+		}
 	}
 }
 
