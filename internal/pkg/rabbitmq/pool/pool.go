@@ -74,11 +74,15 @@ func (p *ChannelPool) GetShared(id string) *amqp.Channel {
 	defer p.mu.Unlock()
 
 	// Simple hash for index
-	var hash uint32 = 0
+	var hash int
 	for i := 0; i < len(id); i++ {
-		hash = hash*31 + uint32(id[i])
+		hash = hash*31 + int(id[i])
 	}
-	index := int(hash % uint32(p.size))
+
+	index := hash % p.size
+	if index < 0 {
+		index = -index
+	}
 
 	ch := p.sharedPool[index]
 	if ch.IsClosed() {
