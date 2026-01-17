@@ -20,7 +20,46 @@ All messages sent to the server must follow this JSON structure:
 
 ## TaskCard Operations
 
-### 1. Update Task Card Tab
+### 1. Create Task Card
+Create a new task card in a specific tab.
+
+**Action**: `create_task_card`
+
+**Payload**:
+```json
+{
+  "task_tab_id": 1,
+  "name": "New Card Task",
+  "content": "Description of the task",
+  "date": "2023-12-31"
+}
+```
+
+**Success Response** (broadcasted to all clients):
+```json
+{
+  "action": "create_task_card",
+  "status": "success",
+  "payload": {
+    "task_tab_id": 1,
+    "name": "New Card Task",
+    "content": "Description of the task",
+    "date": "2023-12-31"
+  },
+  "data": {
+    "id": 101,
+    "task_tab_id": 1,
+    "name": "New Card Task",
+    "content": "Description of the task",
+    "date": "2023-12-31",
+    "status": false,
+    "created_at": "2025-12-24T10:00:00Z",
+    "updated_at": "2025-12-24T10:00:00Z"
+  }
+}
+```
+
+### 2. Update Task Card Tab
 Move a card to a different tab.
 
 **Action**: `update_task_tab_id`
@@ -33,7 +72,7 @@ Move a card to a different tab.
 }
 ```
 
-### 2. Update Task Card Details
+### 3. Update Task Card Details
 Update content, name, date, or status of a card.
 
 **Action**: `update_task_card`
@@ -52,7 +91,7 @@ Update content, name, date, or status of a card.
 
 ## TaskTab Operations
 
-### 3. Update Task Tab Details
+### 4. Update Task Tab Details
 Update name or position of a tab.
 
 **Action**: `update_task_tab`
@@ -94,7 +133,7 @@ If an error occurs, the server sends an error message to the specific client.
 
 ## TaskCardComment Operations
 
-### 4. Create Task Card Comment
+### 5. Create Task Card Comment
 Add a new comment to a task card.
 
 **Action**: `create_task_card_comment`
@@ -126,7 +165,7 @@ Add a new comment to a task card.
 }
 ```
 
-### 5. Get Task Card Comments
+### 6. Get Task Card Comments
 Fetch all comments for a specific task card.
 
 **Action**: `get_task_card_comments`
@@ -165,7 +204,7 @@ Fetch all comments for a specific task card.
 }
 ```
 
-### 6. Update Task Card Comment
+### 7. Update Task Card Comment
 Update an existing comment.
 
 **Action**: `update_task_card_comment`
@@ -197,7 +236,7 @@ Update an existing comment.
 }
 ```
 
-### 7. Delete Task Card Comment
+### 8. Delete Task Card Comment
 Delete a comment.
 
 **Action**: `delete_task_card_comment`
@@ -228,7 +267,7 @@ Delete a comment.
 
 ## Label Operations
 
-### 8. Create Label
+### 9. Create Label
 Add a new label to a task card.
 
 **Action**: `create_label`
@@ -263,7 +302,7 @@ Add a new label to a task card.
 }
 ```
 
-### 9. Get Labels
+### 10. Get Labels
 Fetch all labels for a specific task card.
 
 **Action**: `get_labels`
@@ -296,7 +335,7 @@ Fetch all labels for a specific task card.
 }
 ```
 
-### 10. Update Label
+### 11. Update Label
 Update an existing label's title or color.
 
 **Action**: `update_label`
@@ -331,7 +370,7 @@ Update an existing label's title or color.
 }
 ```
 
-### 11. Delete Label
+### 12. Delete Label
 Delete a label.
 
 **Action**: `delete_label`
@@ -361,7 +400,7 @@ Delete a label.
 
 ## TaskCardUser Operations
 
-### 12. Assign Task Card User
+### 13. Assign Task Card User
 Assign a user to a task card.
 
 **Action**: `assign_task_card_user`
@@ -393,7 +432,7 @@ Assign a user to a task card.
 }
 ```
 
-### 13. Get Task Card Users
+### 14. Get Task Card Users
 Fetch all users assigned to a specific task card.
 
 **Action**: `get_task_card_users`
@@ -425,7 +464,7 @@ Fetch all users assigned to a specific task card.
 }
 ```
 
-### 14. Unassign Task Card User
+### 15. Unassign Task Card User
 Remove a user assignment from a task card.
 
 **Action**: `unassign_task_card_user`
@@ -455,7 +494,7 @@ Remove a user assignment from a task card.
 
 ## BoardUser Operations
 
-### 15. Assign Board User
+### 16. Assign Board User
 Assign a user to a board.
 
 **Action**: `assign_board_user`
@@ -487,7 +526,7 @@ Assign a user to a board.
 }
 ```
 
-### 16. Get Board Users
+### 17. Get Board Users
 Fetch all users assigned to a specific board.
 
 **Action**: `get_board_users`
@@ -519,7 +558,7 @@ Fetch all users assigned to a specific board.
 }
 ```
 
-### 17. Unassign Board User
+### 18. Unassign Board User
 Remove a user assignment from a board.
 
 **Action**: `unassign_board_user`
@@ -549,7 +588,7 @@ Remove a user assignment from a board.
 
 ## WorkspaceUser Operations
 
-### 18. Assign Workspace User
+### 19. Assign Workspace User
 Assign a user to a workspace.
 
 **Action**: `assign_workspace_user`
@@ -581,7 +620,7 @@ Assign a user to a workspace.
 }
 ```
 
-### 19. Get Workspace Users
+### 20. Get Workspace Users
 Fetch all users assigned to a specific workspace.
 
 **Action**: `get_workspace_users`
@@ -613,7 +652,7 @@ Fetch all users assigned to a specific workspace.
 }
 ```
 
-### 20. Unassign Workspace User
+### 21. Unassign Workspace User
 Remove a user assignment from a workspace.
 
 **Action**: `unassign_workspace_user`

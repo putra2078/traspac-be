@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"hrm-app/internal/pkg/rabbitmq/config"
+	"hrm-app/internal/pkg/rabbitmq/pool"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -35,18 +36,23 @@ func (uc *UserChannel) GetStats() UserChannelStats {
 
 type ChannelManager struct {
 	conn         *amqp.Connection
+	pool         *pool.ChannelPool
 	userChannels sync.Map // map[string]*UserChannel
 }
 
 func NewChannelManager(conn *amqp.Connection) *ChannelManager {
-	manager := &ChannelManager{
+	return &ChannelManager{
 		conn: conn,
 	}
+}
 
+func (m *ChannelManager) SetPool(pool *pool.ChannelPool) {
+	m.pool = pool
+}
+
+func (m *ChannelManager) Start() {
 	// Start idle cleanup
-	go manager.startIdleCleanup()
-
-	return manager
+	go m.startIdleCleanup()
 }
 
 func (m *ChannelManager) CreateUserChannel(ctx context.Context, userID string) (*UserChannel, error) {
@@ -55,15 +61,30 @@ func (m *ChannelManager) CreateUserChannel(ctx context.Context, userID string) (
 		return uc, nil
 	}
 
-	// Create new channel
-	ch, err := m.conn.Channel()
+	var ch *amqp.Channel
+	var err error
+	isShared := false
+
+	if m.pool != nil {
+		// Use sticky shared channel from pool
+		ch = m.pool.GetShared(userID)
+		isShared = true
+	} else {
+		// Create new channel (fallback)
+		ch, err = m.conn.Channel()
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to create channel for user %s: %w", userID, err)
+		return nil, fmt.Errorf("failed to get channel for user %s: %w", userID, err)
 	}
 
 	// Set QoS
 	if err := ch.Qos(config.Prefetch, 0, false); err != nil {
-		_ = ch.Close()
+		if !isShared {
+			_ = ch.Close()
+		} else {
+			m.pool.Put(ch)
+		}
 		return nil, fmt.Errorf("failed to set QoS: %w", err)
 	}
 
@@ -78,10 +99,12 @@ func (m *ChannelManager) CreateUserChannel(ctx context.Context, userID string) (
 
 	m.userChannels.Store(userID, userChannel)
 
-	// Monitor channel
-	go m.monitorChannel(userID, ch)
+	// If not shared, monitor it. Shared channels are managed by pool.
+	if !isShared {
+		go m.monitorChannel(userID, ch)
+	}
 
-	log.Printf("✅ Channel created for user %s (Total: %d)", userID, m.GetActiveCount())
+	log.Printf("✅ Channel assigned for user %s (isShared: %v, Total: %d)", userID, isShared, m.GetActiveCount())
 
 	return userChannel, nil
 }
@@ -93,12 +116,18 @@ func (m *ChannelManager) CloseUserChannel(userID string) error {
 	}
 
 	uc := val.(*UserChannel)
+	if m.pool != nil {
+		// Shared channels are managed by pool, no-op for closing
+		log.Printf("ℹ️ Channel for user %s detached (multiplexed, Total active: %d)", userID, m.GetActiveCount())
+		return nil
+	}
+
 	if err := uc.Channel.Close(); err != nil {
 		log.Printf("Error closing channel for user %s: %v", userID, err)
 		return err
 	}
 
-	log.Printf("❌ Channel closed for user %s (Total: %d)", userID, m.GetActiveCount())
+	log.Printf("❌ Channel released for user %s (Total: %d)", userID, m.GetActiveCount())
 	return nil
 }
 

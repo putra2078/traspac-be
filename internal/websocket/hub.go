@@ -139,6 +139,10 @@ func NewHub(rdb *redis.Client, rabbitmqURL string, channelMgr *rmqmanager.Channe
 		log.Fatalf("Failed to initialize RabbitMQ channel pool: %v", err)
 	}
 
+	// Link pool to channel manager and start cleanup
+	channelMgr.SetPool(pool)
+	channelMgr.Start()
+
 	return &Hub{
 		broadcast:       make(chan []byte),
 		register:        make(chan *Client),
