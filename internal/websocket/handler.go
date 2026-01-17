@@ -188,6 +188,8 @@ func (h *Handler) handleMessages(client *Client) {
 			h.boardHandler.HandleUnassignBoardUser(client, msg.Payload)
 
 		// Task Card Actions
+		case "create_task_card":
+			h.taskCardHandler.HandleCreateTaskCard(client, msg.Payload)
 		case "update_task_tab_id":
 			h.taskCardHandler.HandleUpdateTaskTabID(client, msg.Payload)
 		case "update_task_card":

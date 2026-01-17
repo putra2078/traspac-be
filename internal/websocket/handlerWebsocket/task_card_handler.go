@@ -49,6 +49,13 @@ type UnassignTaskCardUserPayload struct {
 	ID uint `json:"id"`
 }
 
+type CreateTaskCardPayload struct {
+	TaskTabID uint   `json:"task_tab_id"`
+	Name      string `json:"name"`
+	Content   string `json:"content,omitempty"`
+	Date      string `json:"date,omitempty"`
+}
+
 func (h *TaskCardHandler) HandleUpdateTaskTabID(client Client, payload json.RawMessage) {
 	var msg UpdateTaskTabIDPayload
 	if err := json.Unmarshal(payload, &msg); err != nil {
@@ -205,4 +212,41 @@ func (h *TaskCardHandler) HandleUnassignTaskCardUser(client Client, payload json
 
 	h.SendSuccess(client, "unassign_task_card_user", msg, map[string]interface{}{"id": msg.ID})
 	h.BroadcastSuccess(h.hub, taskTab.BoardID, "unassign_task_card_user", msg, map[string]interface{}{"id": msg.ID})
+}
+
+func (h *TaskCardHandler) HandleCreateTaskCard(client Client, payload json.RawMessage) {
+	var msg CreateTaskCardPayload
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		h.SendError(client, "create_task_card", "Invalid payload")
+		return
+	}
+
+	taskCardData := &taskCard.TaskCard{
+		TaskTabID: msg.TaskTabID,
+		Name:      msg.Name,
+		Content:   msg.Content,
+		Date:      msg.Date,
+		Status:    false, // Default status
+	}
+
+	if err := h.taskCardUseCase.Create(context.Background(), taskCardData); err != nil {
+		h.SendError(client, "create_task_card", "Failed to create task card: "+err.Error())
+		return
+	}
+
+	// Fetch fresh data with preloads
+	freshTaskCard, err := h.taskCardUseCase.FindByID(context.Background(), taskCardData.ID)
+	if err != nil {
+		h.SendError(client, "create_task_card", "Failed to refresh task card data")
+		return
+	}
+
+	taskTab, err := h.taskTabUseCase.FindByID(freshTaskCard.TaskTabID)
+	if err != nil {
+		h.SendError(client, "create_task_card", "Task tab not found")
+		return
+	}
+
+	h.SendSuccess(client, "create_task_card", msg, freshTaskCard)
+	h.BroadcastSuccess(h.hub, taskTab.BoardID, "create_task_card", msg, freshTaskCard)
 }

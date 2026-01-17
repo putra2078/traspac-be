@@ -126,7 +126,7 @@ func NewHub(rdb *redis.Client, rabbitmqURL string, channelMgr *rmqmanager.Channe
 	if err := rmqsetup.Declare(ch, rmqconfig.ExchangeName, rmqconfig.ExchangeType, queueName, rmqconfig.RoutingKey); err != nil {
 		log.Fatalf("Failed to declare RabbitMQ topology: %v", err)
 	}
-	
+
 	if err := ch.Close(); err != nil {
 		log.Printf("failed to close channel: %v", err)
 	}
@@ -138,6 +138,10 @@ func NewHub(rdb *redis.Client, rabbitmqURL string, channelMgr *rmqmanager.Channe
 	if err != nil {
 		log.Fatalf("Failed to initialize RabbitMQ channel pool: %v", err)
 	}
+
+	// Link pool to channel manager and start cleanup
+	channelMgr.SetPool(pool)
+	channelMgr.Start()
 
 	return &Hub{
 		broadcast:       make(chan []byte),

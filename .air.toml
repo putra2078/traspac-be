@@ -1,5 +1,5 @@
 # ======================================
-# 🚀 AIR CONFIG for HRM APP (by Putra)
+# AIR CONFIG for HRM APP (by Putra)
 # ======================================
 root = "."
 tmp_dir = "tmp"
